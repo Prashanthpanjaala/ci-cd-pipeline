@@ -168,7 +168,7 @@ STEP-9: attach web hooks to trigger
 STEP-9:   Finally Deployed website with public IP and port number.
 http://18.232.116.59:3000/
 
-
+DockerImage : ADD file:9c8b7c79fbbb19d308d151785d178e19bfa7b83257f38d03fa7f30cd41d58530 in / 
 
 ![Screenshot (65)](https://github.com/user-attachments/assets/33d2d249-247b-438f-a614-7b6b8c687a79)
 
