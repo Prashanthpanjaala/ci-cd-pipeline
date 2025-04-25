@@ -99,6 +99,31 @@ By using webhooks, you can integrate Jenkins with external platforms to automati
 
 
 
+MINIKUBE : Minikube is a tool that lets you run **Kubernetes locally**.
+
+Here’s the breakdown:
+
+### 🔧 What it does:
+- It creates a **single-node Kubernetes cluster** on your **local machine**.
+- Great for **development**, **testing**, and **learning** Kubernetes without needing a cloud provider or full cluster.
+
+### 📦 How it works:
+- Minikube runs a **virtual machine** (or container) on your machine.
+- Inside that VM, it installs and configures Kubernetes and Docker.
+- You get a fully working Kubernetes cluster that you can interact with using `kubectl`.
+
+### ✅ Why you’d use it:
+- You're learning Kubernetes.
+- You want to test deployments locally.
+- You need a quick way to simulate a cluster without cloud costs or setup.
+
+### 🚀 Key features:
+- Supports Docker, containerd, or CRI-O as the container runtime.
+- Can mount local folders into the VM.
+- Comes with dashboard support (`minikube dashboard`).
+- Supports **addons** like Ingress, metrics-server, etc.
+
+
 
 
 STEP-1: Launch EC2 Instance with below Configurations
