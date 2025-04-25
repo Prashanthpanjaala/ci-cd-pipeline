@@ -207,3 +207,230 @@ DockerImage : ADD file:9c8b7c79fbbb19d308d151785d178e19bfa7b83257f38d03fa7f30cd4
 
 
 
+
+
+
+
+
+KUBERNETES -BASED CANARY DEPLOYMENT WITH K3S AND ISTIO
+---
+
+## 🚀 **Project Overview**
+You're setting up a **canary deployment strategy** using **K3s (lightweight Kubernetes)** and **Istio service mesh** to:
+- Deploy two versions of an app
+- Split traffic dynamically (e.g., 80/20)
+- Monitor app performance
+- Adjust traffic (promote or rollback)
+
+---
+
+## 🧰 **Tools Stack**
+| Tool     | Purpose |
+|----------|--------|
+| **K3s**  | Lightweight Kubernetes cluster |
+| **Istio**| Traffic routing, telemetry, canary deployment |
+| **Docker**| Containerize your apps |
+| **Helm** | Manage K8s manifests |
+| **Node.js/Python** | Base app (2 versions) |
+
+---
+
+## 🏗️ **Step-by-Step Breakdown**
+
+### 1. 🔧 **Set Up K3s Cluster**
+Install K3s locally or on VM:
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+kubectl get nodes
+```
+
+### 2. 🐳 **Containerize App (2 Versions)**
+Create Dockerfiles for both versions (`v1`, `v2`) of your app.
+
+Example (Node.js):
+
+```Dockerfile
+# Dockerfile
+FROM node:18
+WORKDIR /app
+COPY . .
+RUN npm install
+CMD ["node", "server.js"]
+```
+
+Build and push:
+```bash
+docker build -t yourrepo/app:v1 .
+docker build -t yourrepo/app:v2 .
+docker push yourrepo/app:v1
+docker push yourrepo/app:v2
+```
+
+---
+
+### 3. 📦 **Deploy App to K3s**
+Create a Kubernetes `Deployment` and `Service` for your app.
+
+#### `app-deployment.yaml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: v1
+    spec:
+      containers:
+      - name: app
+        image: yourrepo/app:v1
+        ports:
+        - containerPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: v2
+    spec:
+      containers:
+      - name: app
+        image: yourrepo/app:v2
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 3000
+```
+
+---
+
+### 4. 🌉 **Install Istio**
+```bash
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-*
+export PATH=$PWD/bin:$PATH
+istioctl install --set profile=demo -y
+```
+
+Enable automatic sidecar injection:
+```bash
+kubectl label namespace default istio-injection=enabled
+```
+
+---
+
+### 5. 🌐 **Istio Gateway & VirtualService for Traffic Splitting**
+
+#### `istio-gateway.yaml`
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: myapp-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: myapp-destination
+spec:
+  host: myapp-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: myapp-virtualservice
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - myapp-gateway
+  http:
+  - route:
+    - destination:
+        host: myapp-service
+        subset: v1
+      weight: 80
+    - destination:
+        host: myapp-service
+        subset: v2
+      weight: 20
+```
+
+---
+
+### 6. 📈 **Monitoring & Metrics**
+Enable **Prometheus**, **Grafana**, **Kiali**, and **Jaeger** in Istio:
+
+```bash
+istioctl dashboard kiali
+istioctl dashboard grafana
+```
+
+Monitor request metrics, error rates, latency.
+
+---
+
+### 7. 🔁 **Rollout Strategy**
+- Observe canary version (`v2`) performance
+- If successful: increase traffic (e.g., 50/50, then 100/0)
+- If poor: rollback (0% to `v2`, 100% to `v1`)
+
+Update weights in `VirtualService` YAML or use `kubectl patch`.
+
+---
+
+## 📄 **Deliverables Summary**
+| Item | Description |
+|------|-------------|
+| ✅ **YAMLs** | Deployments, Services, Istio Gateway, VirtualService |
+| ✅ **Routing** | Config for 80/20 traffic split |
+| ✅ **Monitoring** | Screenshots or logs from Grafana/Kiali |
+| ✅ **Strategy Doc** | Document explaining rollout, monitoring, rollback/promotion logic |
+
+---
+
